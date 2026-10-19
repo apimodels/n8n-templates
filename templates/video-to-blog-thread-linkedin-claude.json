@@ -1,0 +1,671 @@
+{
+  "name": "Turn YouTube and Bilibili videos into a blog post, X thread and LinkedIn post with Claude via apimodels.app",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Turn a video into a blog post, X thread and LinkedIn post\n\nPaste a YouTube or Bilibili link and get a ready-to-edit blog post, an X thread, a LinkedIn post, a newsletter blurb and an optional 16:9 cover image. The subtitles, the writing (Claude Sonnet 5.5) and the cover (GPT Image 2) all come from one API key on [apimodels.app](https://apimodels.app), so there is no separate transcript service to sign up for.\n\n### How it works\n1. The form takes the video link, output language, tone and whether to make a cover.\n2. **Get subtitles** lists the video's caption tracks; **Pick subtitle track** prefers human captions in the spoken language.\n3. The captions are downloaded and cleaned into plain text.\n4. Claude writes every format in one call and returns JSON.\n5. If requested, GPT Image 2 draws a cover with the headline on it.\n6. The result page shows everything in copy-ready boxes plus the real cost of the run.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.\n2. Create a **Bearer Auth** credential with that key and select it in the three apimodels HTTP Request nodes.\n3. Activate the workflow and open the production form URL from the trigger node.\n\n### Customize\n- Change the writing model or transcript limit in **Settings**.\n- Edit lengths and formats in the system message of **Write posts**.\n- Only videos with captions work (most YouTube videos have auto-generated ones).",
+        "height": 900,
+        "width": 540,
+        "color": 1
+      },
+      "id": "083e3656-39c6-56c2-9f9b-d5a99a0e1b14",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Get the transcript\nLists caption tracks, picks the best one, downloads and cleans it.",
+        "height": 420,
+        "width": 1120,
+        "color": 7
+      },
+      "id": "121a415c-290b-57fa-a0d6-96fde927a481",
+      "name": "Section: subtitles",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Write and illustrate\nOne Claude call writes all formats as JSON; GPT Image 2 makes the cover if asked.",
+        "height": 420,
+        "width": 1240,
+        "color": 7
+      },
+      "id": "babf539a-3365-5afb-a2b5-f4018344dd89",
+      "name": "Section: write",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Result pages\nCopy-ready text with the run's cost, or the provider's own error message.",
+        "height": 760,
+        "width": 480,
+        "color": 7
+      },
+      "id": "02ab449b-e18c-574b-b7e1-107ac7a30e93",
+      "name": "Section: result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2400,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Video to posts",
+        "formDescription": "Paste a YouTube or Bilibili link. You get a blog post, an X thread, a LinkedIn post and a newsletter blurb written from the video's subtitles.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Video URL",
+              "requiredField": true,
+              "placeholder": "https://www.youtube.com/watch?v=..."
+            },
+            {
+              "fieldLabel": "Output language",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Same as the video"
+                  },
+                  {
+                    "option": "English"
+                  },
+                  {
+                    "option": "Chinese (Simplified)"
+                  },
+                  {
+                    "option": "Spanish"
+                  },
+                  {
+                    "option": "Portuguese"
+                  },
+                  {
+                    "option": "German"
+                  },
+                  {
+                    "option": "French"
+                  },
+                  {
+                    "option": "Japanese"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Tone",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Professional"
+                  },
+                  {
+                    "option": "Friendly"
+                  },
+                  {
+                    "option": "Witty"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Cover image",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Yes, make a 16:9 cover"
+                  },
+                  {
+                    "option": "No cover"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Notes for the writer",
+              "fieldType": "textarea",
+              "placeholder": "Optional: audience, a link to include, words to avoid"
+            }
+          ]
+        },
+        "options": {
+          "path": "video-to-posts",
+          "buttonLabel": "Write the posts"
+        }
+      },
+      "id": "f5c9df2d-0c37-5715-9b4c-2022f67e073e",
+      "name": "Video link form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "8ae58c6a-44f9-5418-8b27-fef2730f7937"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c9fa8713-6b35-523c-8e70-64803710a0d5",
+              "name": "api_base",
+              "value": "https://api.apimodels.app/v1",
+              "type": "string"
+            },
+            {
+              "id": "21e0b2aa-f67a-5f4b-99bc-deaa64572f71",
+              "name": "writer_model",
+              "value": "claude-sonnet-5-5",
+              "type": "string"
+            },
+            {
+              "id": "024511e3-2f13-57e4-91c4-49905bd078c9",
+              "name": "image_model",
+              "value": "gpt-image-2",
+              "type": "string"
+            },
+            {
+              "id": "f4b11d21-5cb9-52a0-8308-16b72fbdd9d3",
+              "name": "max_transcript_chars",
+              "value": 60000,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "a10e316f-966f-5337-bdd1-3bffce8a5edf",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_base }}/media/subtitles",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ url: $json['Video URL'].trim() }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 150000
+        }
+      },
+      "id": "fb7a97d0-cec8-5b3b-8c47-82df6d051b04",
+      "name": "Get subtitles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Prefer human captions in the spoken language. The auto-generated track tells us which language is spoken.\nconst res = $input.first().json;\nconst data = (res.body && res.body.data) || {};\nconst tracks = data.subtitles || [];\nif (!tracks.length) {\n  throw new Error('This video has no subtitles. Try a YouTube or Bilibili video with captions.');\n}\nconst isAuto = (t) => /auto-generated/i.test(t.language_name || '');\nconst auto = tracks.find(isAuto);\nconst manual = tracks.filter((t) => !isAuto(t));\nconst pick = manual.find((t) => auto && t.language_tag === auto.language_tag) || auto || manual.find((t) => /^en/.test(t.language_tag)) || manual[0];\nconst order = ['srt', 'vtt', 'json', 'json3'];\nconst file = order.map((f) => (pick.urls || []).find((u) => u.format === f)).find(Boolean) || pick.urls[0];\n\nreturn [{ json: {\n  title: data.title || '',\n  language: pick.language_name,\n  format: file.format,\n  subtitle_url: file.url,\n  subtitles_cost: Number(res.headers['x-apimodels-cost'] || 0),\n} }];"
+      },
+      "id": "afb1241a-8384-5277-b872-dd5726353b99",
+      "name": "Pick subtitle track",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        240
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.subtitle_url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "4e06a434-1dae-57ab-9d4d-d4be5efab34a",
+      "name": "Download subtitles",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        240
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// SRT / VTT -> plain text; Bilibili returns JSON with body[].content.\nconst meta = $('Pick subtitle track').first().json;\nconst raw = String($input.first().json.data || '');\nlet lines = [];\nif (raw.trim().startsWith('{')) {\n  try {\n    const j = JSON.parse(raw);\n    lines = (j.body || []).map((x) => x.content).filter(Boolean);\n    if (!lines.length && j.events) lines = j.events.map((e) => (e.segs || []).map((s) => s.utf8).join('')).filter(Boolean);\n  } catch (e) { /* fall through to text parsing */ }\n}\nif (!lines.length) {\n  lines = raw.split(/\\r?\\n/)\n    .map((l) => l.replace(/<[^>]+>/g, '').trim())\n    .filter((l) => l && !/^\\d+$/.test(l) && !l.includes('-->') && !/^(WEBVTT|Kind:|Language:)/.test(l));\n}\n// Auto captions repeat the same line; keep each line once in a row.\nconst kept = [];\nfor (const l of lines) if (l !== kept[kept.length - 1]) kept.push(l);\nconst max = $('Settings').first().json.max_transcript_chars;\nconst transcript = kept.join(' ').replace(/\\s+/g, ' ').trim().slice(0, max);\nif (transcript.length < 200) throw new Error('The subtitles are too short to write from.');\n\nreturn [{ json: { transcript, chars: transcript.length, title: meta.title } }];"
+      },
+      "id": "3a09dc58-89af-54d4-a48b-515446bb7dfb",
+      "name": "Clean transcript",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        240
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ (() => {\n  const form = $('Video link form').first().json;\n  const lang = form['Output language'] === 'Same as the video' ? 'the same language as the transcript' : form['Output language'];\n  const system = [\n    'You repurpose video transcripts into written content. Reply with one JSON object and nothing else, with these keys:',\n    'blog_title (string);',\n    'blog_markdown (string, 600 to 900 words, use ## section headings, no # title, no links you were not given);',\n    'x_thread (array of 5 to 8 strings, each under 270 characters, the first one is a hook, at most one hashtag in the last one);',\n    'linkedin_post (string, 120 to 220 words, short paragraphs);',\n    'newsletter_blurb (string, 60 to 100 words);',\n    'cover_prompt (string, an English prompt for a bold, simple 16:9 blog cover about the topic that renders a headline of at most 6 words in large clean letters; give the exact headline in quotes).',\n    'Stay faithful to the transcript: do not invent facts, numbers, names or quotes.',\n    `Write everything except cover_prompt in ${lang}. Tone: ${form['Tone']}.`\n  ].join(' ');\n  const user = `Video title: ${$json.title}\\nNotes from the user: ${form['Notes for the writer'] || 'none'}\\n\\nTranscript:\\n${$json.transcript}`;\n  return JSON.stringify({ model: $('Settings').first().json.writer_model, max_tokens: 6000, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] });\n})() }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 240000
+        }
+      },
+      "id": "704a1f23-fb12-57c8-a35f-b5586753708a",
+      "name": "Write posts",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1340,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst text = (res.body && res.body.choices && res.body.choices[0].message.content) || '';\nconst match = text.match(/\\{[\\s\\S]*\\}/);\nlet posts;\ntry {\n  posts = JSON.parse(match ? match[0] : text);\n} catch (e) {\n  throw new Error('The writing model did not return valid JSON. Run it again or pick another model in Settings.');\n}\nreturn [{ json: { ...posts, writer_cost: Number(res.headers['x-apimodels-cost'] || 0) } }];"
+      },
+      "id": "3591a5b2-3b6a-5472-8efb-c89d9748c706",
+      "name": "Parse posts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1560,
+        240
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0c70979d-4c8d-56d8-a4a5-89a8876fb8a6",
+              "leftValue": "={{ $('Video link form').first().json['Cover image'].startsWith('Yes') }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "afe37c04-37f8-50f0-b422-7e26cd1f4da5",
+      "name": "Make a cover?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1780,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/images/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: $('Settings').first().json.image_model, prompt: $json.cover_prompt, size: '1536x1024', response_format: 'url' }) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "id": "53c786e3-28a1-5f32-b228-bfc1411391cf",
+      "name": "Generate cover",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2000,
+        120
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Settings').first().json.api_base }}/records/{{ (($json.body?.data?.[0]?.url || '').split('/').pop() || 'none').split('.')[0] }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "40f4d704-09c0-5002-a666-6851b1ce6533",
+      "name": "Get cover cost",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2220,
+        120
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst posts = $('Parse posts').first().json;\nconst sub = $('Pick subtitle track').first().json;\nconst blog = posts.blog_markdown || '';\n// CJK text has no spaces between words, so count characters there.\nconst cjk = (blog.match(/[\\u3040-\\u30ff\\u3400-\\u9fff\\uac00-\\ud7af]/g) || []).length;\nconst length = cjk > blog.length / 4 ? `${cjk} characters` : `${blog.split(/\\s+/).filter(Boolean).length} words`;\n\nlet coverHtml = '';\nlet coverCost = 0;\nif ($('Generate cover').isExecuted) {\n  const r = $('Generate cover').first().json;\n  const url = r.body && r.body.data && r.body.data[0] && r.body.data[0].url;\n  const rec = $('Get cover cost').isExecuted ? $('Get cover cost').first().json : {};\n  coverCost = Number((rec.data && rec.data.credits) || 0);\n  coverHtml = url\n    ? `<h3>Cover</h3><img src=\"${esc(url)}\" alt=\"Cover image\"><p><a class=\"btn\" href=\"${esc(url)}\" target=\"_blank\" rel=\"noopener\">Open full size</a></p>`\n    : `<h3>Cover</h3><p class=\"meta\">The cover could not be made: ${esc((r.error && r.error.message) || 'no image returned')}</p>`;\n}\n\nconst box = (label, text, rows) => `<h3>${label}</h3><textarea readonly rows=\"${rows}\">${esc(text)}</textarea>`;\nconst thread = (posts.x_thread || []).map((t, i) => `<li><span class=\"meta\">${i + 1}/${posts.x_thread.length} · ${String(t).length} chars</span><br>${esc(t)}</li>`).join('');\nconst total = sub.subtitles_cost + posts.writer_cost + coverCost;\n\nconst html = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:820px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px}\nh2{margin-top:0}h3{margin:28px 0 8px}img{max-width:100%;border-radius:12px;border:1px solid #e7e5e4}\ntextarea{width:100%;box-sizing:border-box;font:14px/1.5 ui-monospace,Menlo,monospace;border:1px solid #d6d3d1;border-radius:10px;padding:10px}\nol{padding-left:0;list-style:none}li{border:1px solid #e7e5e4;border-radius:10px;padding:10px;margin:8px 0}\n.meta{color:#78716c;font-size:13px}.btn{display:inline-block;padding:9px 16px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}</style></head>\n<body><div class=\"card\">\n<h2>${esc(posts.blog_title || sub.title)}</h2>\n<p class=\"meta\">From \"${esc(sub.title)}\" · ${esc(sub.language)} subtitles · ${length} · charged $${total.toFixed(4)} (subtitles $${sub.subtitles_cost}, writing $${posts.writer_cost}${coverCost ? `, cover $${coverCost}` : ''})</p>\n${coverHtml}\n${box('Blog post (Markdown)', posts.blog_markdown, 18)}\n<h3>X thread</h3><ol>${thread}</ol>\n${box('LinkedIn post', posts.linkedin_post, 9)}\n${box('Newsletter blurb', posts.newsletter_blurb, 5)}\n<p><a class=\"btn\" href=\"/form/video-to-posts\">Do another video</a></p>\n</div></body></html>`;\n\nreturn [{ json: { html } }];"
+      },
+      "id": "88906dfa-c8ad-5587-a760-569e21b4b249",
+      "name": "Build result page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.html }}"
+      },
+      "id": "73cd0224-c41f-5c30-9525-5e153a26d467",
+      "name": "Show result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        240
+      ],
+      "webhookId": "73cd0224-c41f-5c30-9525-5e153a26d467"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>The posts could not be made</h2>\n<p>{{ $json.error?.message || $json.error || 'Something went wrong.' }}</p>\n<p class=\"meta\">Only videos with subtitles work. Failed requests are not charged.</p>\n<a class=\"btn\" href=\"/form/video-to-posts\">Try another video</a>\n</div></body></html>"
+      },
+      "id": "4eaf5824-47ce-5c2b-b52f-85182c1a6cad",
+      "name": "Show error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2660,
+        460
+      ],
+      "webhookId": "4eaf5824-47ce-5c2b-b52f-85182c1a6cad"
+    }
+  ],
+  "connections": {
+    "Video link form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Get subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get subtitles": {
+      "main": [
+        [
+          {
+            "node": "Pick subtitle track",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick subtitle track": {
+      "main": [
+        [
+          {
+            "node": "Download subtitles",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download subtitles": {
+      "main": [
+        [
+          {
+            "node": "Clean transcript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean transcript": {
+      "main": [
+        [
+          {
+            "node": "Write posts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write posts": {
+      "main": [
+        [
+          {
+            "node": "Parse posts",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse posts": {
+      "main": [
+        [
+          {
+            "node": "Make a cover?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Make a cover?": {
+      "main": [
+        [
+          {
+            "node": "Generate cover",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build result page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate cover": {
+      "main": [
+        [
+          {
+            "node": "Get cover cost",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get cover cost": {
+      "main": [
+        [
+          {
+            "node": "Build result page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build result page": {
+      "main": [
+        [
+          {
+            "node": "Show result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

@@ -1,0 +1,351 @@
+{
+  "name": "Compare answers, speed and cost of Claude, GPT, Gemini, DeepSeek and Qwen side by side with apimodels.app",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Compare chat models side by side: answers, speed and cost\n\nPick a few models, type one prompt, and get every answer on one page with how long each took, how many tokens it used and what it actually cost. Useful when choosing a model for a feature, checking a prompt across vendors, or showing a team why one model is worth the price. All models run through one OpenAI-compatible key on [apimodels.app](https://apimodels.app).\n\n### How it works\n1. The form takes a prompt, an optional system message, 2 to 6 models and an output limit.\n2. **One item per model** builds one request per selected model.\n3. **Ask each model** sends them all at once to the chat completions endpoint.\n4. **Get billing record** looks up each request by its id: the exact amount charged, token counts, and start and finish times measured on the server.\n5. The result page shows a comparison table and every full answer, and marks the fastest and the lowest-cost model.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.\n2. Create a **Bearer Auth** credential with that key and select it in the two HTTP Request nodes.\n3. Activate the workflow and open the production form URL from the trigger node.\n\n### Customize\n- Add any model id from `GET /v1/models` to the list in **One item per model** and to the form options.\n- Reasoning models spend part of the output limit on thinking; raise the limit if answers stop early.",
+        "height": 860,
+        "width": 540,
+        "color": 1
+      },
+      "id": "fc0e1dc7-3515-58ed-a11f-995f4bcd457a",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Ask every model\nOne request per selected model, all sent at the same time.",
+        "height": 400,
+        "width": 900,
+        "color": 7
+      },
+      "id": "bf3ff6f0-11ce-5e10-a995-53dd26250c22",
+      "name": "Section: ask",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Measure and compare\nBilling records give the real cost and server-side timing; the page puts it all in one table.",
+        "height": 400,
+        "width": 680,
+        "color": 7
+      },
+      "id": "e45fd964-2bf0-5b2a-a012-8132afe1443d",
+      "name": "Section: measure",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        900,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Compare chat models",
+        "formDescription": "Send one prompt to several models and compare their answers, speed and cost.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Prompt",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "e.g. Write a 3-sentence product description for a smart water bottle."
+            },
+            {
+              "fieldLabel": "System message",
+              "fieldType": "textarea",
+              "placeholder": "Optional, e.g. You are a concise copywriter."
+            },
+            {
+              "fieldLabel": "Models",
+              "fieldType": "checkbox",
+              "requiredField": true,
+              "limitSelection": "range",
+              "minSelections": 2,
+              "maxSelections": 6,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Claude Sonnet 5.5"
+                  },
+                  {
+                    "option": "Claude Haiku 5.5"
+                  },
+                  {
+                    "option": "GPT-5.5"
+                  },
+                  {
+                    "option": "GPT-6 Luna"
+                  },
+                  {
+                    "option": "Gemini 4 Argon"
+                  },
+                  {
+                    "option": "Gemini 3.8 Flash"
+                  },
+                  {
+                    "option": "DeepSeek V4.1 Flash"
+                  },
+                  {
+                    "option": "Qwen3.8 Max"
+                  },
+                  {
+                    "option": "Grok 4.6"
+                  },
+                  {
+                    "option": "GLM-5.3"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Output limit (tokens)",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "2000"
+                  },
+                  {
+                    "option": "4000"
+                  },
+                  {
+                    "option": "8000"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "path": "compare-models",
+          "buttonLabel": "Compare"
+        }
+      },
+      "id": "48ccaffe-b353-588d-a16c-b86bc5656faa",
+      "name": "Comparison form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "4fbaec26-26db-5ac8-94cf-dab91afae8e6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "66e95071-5a71-5423-889d-9f089661e572",
+              "name": "api_base",
+              "value": "https://api.apimodels.app/v1",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "36c1d1bb-a2e3-5eaa-9ac7-afbdb6bf2fa7",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Form label -> model id. Any id from GET /v1/models works.\nconst MODELS = {\n  'Claude Sonnet 5.5': 'claude-sonnet-5-5',\n  'Claude Haiku 5.5': 'claude-haiku-5-5',\n  'GPT-5.5': 'gpt-5.5',\n  'GPT-6 Luna': 'gpt-6-luna',\n  'Gemini 4 Argon': 'gemini-4-argon',\n  'Gemini 3.8 Flash': 'gemini-3.8-flash',\n  'DeepSeek V4.1 Flash': 'deepseek-v4.1-flash',\n  'Qwen3.8 Max': 'qwen3.8-max',\n  'Grok 4.6': 'grok-4.6',\n  'GLM-5.3': 'glm-5.3',\n};\n\nconst form = $input.first().json;\nconst picked = Array.isArray(form['Models']) ? form['Models'] : [form['Models']];\nconst messages = [];\nif ((form['System message'] || '').trim()) messages.push({ role: 'system', content: form['System message'].trim() });\nmessages.push({ role: 'user', content: form['Prompt'] });\n\nreturn picked.filter((label) => MODELS[label]).map((label) => ({\n  json: {\n    label,\n    body: { model: MODELS[label], max_tokens: Number(form['Output limit (tokens)']) || 2000, messages },\n  },\n}));"
+      },
+      "id": "135f4537-e02e-5c4f-9363-d2087c4891ff",
+      "name": "One item per model",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 240000
+        }
+      },
+      "id": "f6dda213-7964-5137-b7b0-bee69c36941e",
+      "name": "Ask each model",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Settings').first().json.api_base }}/records/{{ ($json.headers && $json.headers['x-apimodels-request-id']) || 'none' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "fab41ca4-59b0-50a3-ac93-84e467495cbb",
+      "name": "Get billing record",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        960,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst reqs = $('One item per model').all();\nconst answers = $('Ask each model').all();\nconst records = $input.all();\nconst form = $('Comparison form').first().json;\n\nconst rows = reqs.map((r, i) => {\n  const a = answers[i] ? answers[i].json : {};\n  const rec = (records[i] && records[i].json && records[i].json.data) || {};\n  const text = a.body && a.body.choices && a.body.choices[0] && a.body.choices[0].message ? a.body.choices[0].message.content : null;\n  const err = text == null ? ((a.error && (a.error.message || a.error)) || 'No answer') : null;\n  const seconds = rec.created_at && rec.completed_at ? (rec.completed_at - rec.created_at) / 1000 : null;\n  const usage = rec.usage || {};\n  return {\n    label: r.json.label, model: r.json.body.model, text, err, seconds,\n    cost: typeof rec.credits === 'number' ? rec.credits : null,\n    input: usage.input_tokens, output: usage.output_tokens,\n    stop: a.body && a.body.choices && a.body.choices[0] ? a.body.choices[0].finish_reason : null,\n  };\n});\n\nconst ok = rows.filter((r) => !r.err);\nconst fastest = ok.filter((r) => r.seconds != null).sort((x, y) => x.seconds - y.seconds)[0];\nconst costs = ok.filter((r) => r.cost != null).map((r) => r.cost);\nconst lowestCost = costs.length ? Math.min(...costs) : null;  // ties all get the badge\nconst total = rows.reduce((s, r) => s + (r.cost || 0), 0);\nconst badge = (r) => [r === fastest ? '<span class=\"b\">fastest</span>' : '', (r.cost != null && r.cost === lowestCost) ? '<span class=\"b\">lowest cost</span>' : ''].join(' ');\n\nconst table = rows.map((r) => `<tr><td><b>${esc(r.label)}</b><br><span class=\"meta\">${esc(r.model)}</span> ${badge(r)}</td>\n<td>${r.err ? '—' : (r.seconds != null ? r.seconds.toFixed(1) + ' s' : '?')}</td>\n<td>${r.err ? '—' : `${r.input ?? '?'} / ${r.output ?? '?'}`}</td>\n<td>${r.err ? '$0 (failed)' : (r.cost != null ? '$' + r.cost.toFixed(4) : '?')}</td></tr>`).join('');\n\nconst cards = rows.map((r) => `<details ${r.err ? '' : 'open'}><summary><b>${esc(r.label)}</b> ${badge(r)}${r.stop === 'length' ? ' <span class=\"meta\">(stopped at the output limit)</span>' : ''}</summary>\n<div class=\"ans\">${r.err ? '<span class=\"err\">' + esc(r.err) + '</span>' : esc(r.text)}</div></details>`).join('');\n\nconst html = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:960px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px}\ntable{width:100%;border-collapse:collapse;font-size:14px}th,td{text-align:left;padding:10px;border-bottom:1px solid #e7e5e4;vertical-align:top}\n.meta{color:#78716c;font-size:12px}.b{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:#ecfccb;color:#3f6212;font-size:12px}\ndetails{border:1px solid #e7e5e4;border-radius:12px;padding:12px;margin:12px 0}summary{cursor:pointer}\n.ans{white-space:pre-wrap;margin-top:10px;line-height:1.55}.err{color:#b91c1c}.prompt{white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}\n.btn{display:inline-block;margin-top:16px;padding:9px 16px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}</style></head>\n<body><div class=\"card\"><h2>Model comparison</h2>\n<div class=\"prompt\">${esc(form['Prompt'])}</div>\n<table><thead><tr><th>Model</th><th>Time</th><th>Tokens in / out</th><th>Charged</th></tr></thead><tbody>${table}</tbody></table>\n<p class=\"meta\">Time is measured on the server from request to last token. Charged is the exact amount from GET /v1/records/{id}; failed calls are not charged. Total: $${total.toFixed(4)}.</p>\n${cards}\n<a class=\"btn\" href=\"/form/compare-models\">Compare again</a></div></body></html>`;\n\nreturn [{ json: { html } }];"
+      },
+      "id": "3089f4a8-4c29-5d5c-bc00-937b71d7ef6e",
+      "name": "Build comparison page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.html }}"
+      },
+      "id": "af72251d-a8b9-59fc-b039-bebc56ef200e",
+      "name": "Show comparison",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        240
+      ],
+      "webhookId": "6f2a8fe6-e0dc-5bd1-ac1c-b9c9324144eb"
+    }
+  ],
+  "connections": {
+    "Comparison form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "One item per model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "One item per model": {
+      "main": [
+        [
+          {
+            "node": "Ask each model",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ask each model": {
+      "main": [
+        [
+          {
+            "node": "Get billing record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get billing record": {
+      "main": [
+        [
+          {
+            "node": "Build comparison page",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build comparison page": {
+      "main": [
+        [
+          {
+            "node": "Show comparison",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

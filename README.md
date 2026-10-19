@@ -1,6 +1,6 @@
 # n8n templates for apimodels.app
 
-Ready-to-import [n8n](https://n8n.io) workflows that generate images, video, speech and chat with one API key from [apimodels.app](https://apimodels.app), an OpenAI-compatible API for 150+ image, video, audio and language models. Each workflow uses only core n8n nodes (no community nodes), includes sticky-note instructions, and was run end to end before publishing.
+Ready-to-import [n8n](https://n8n.io) workflows that generate images, video, speech and text with one API key from [apimodels.app](https://apimodels.app), an OpenAI-compatible API for 150+ image, video, audio and language models. Each workflow uses only core n8n nodes (no community nodes), includes sticky-note instructions, and was run end to end before publishing.
 
 Maintained by the apimodels.app team.
 
@@ -10,8 +10,10 @@ Maintained by the apimodels.app team.
 | [Photo to short video](templates/photo-to-short-video-seedance-2.md) | n8n form: prompt plus optional first-frame photo to a 5–15 s video with sound | Seedance 2.0 Mini / Fast / standard | 5 s Mini 480p about 2–3 min |
 | [Blog post to podcast](templates/blog-post-to-podcast-claude-elevenlabs.md) | n8n form: article URL or text to a narrated MP3 episode | Claude Sonnet 5.5 + ElevenLabs v4 | 1-minute episode about 40 s |
 | [Chat agent with image tool](templates/chat-agent-with-image-generation.md) | Hosted chat: an AI agent that answers and draws on request | Claude Haiku 5.5 + GPT Image 2 | Image reply about 1–2 min |
+| [Video to blog post, X thread and LinkedIn post](templates/video-to-blog-thread-linkedin-claude.md) | n8n form: YouTube or Bilibili link to a blog post, X thread, LinkedIn post, newsletter blurb and cover, written from the subtitles | Claude Sonnet 5.5 + GPT Image 2 | 19-min video about 2.5 min, $0.063 |
+| [Compare chat models side by side](templates/compare-chat-models-side-by-side.md) | n8n form: one prompt to 2–6 models, with server-measured time, tokens and exact cost per model | Claude, GPT, Gemini, DeepSeek, Qwen, Grok, GLM | 5 models about 15 s, under $0.01 |
 
-Timings come from our own test runs on n8n 2.43.8 on 2026-10-19. Prices are on each model's page at apimodels.app; failed generations are not charged.
+Timings and costs come from our own test runs on n8n 2.43.8 on 2026-10-19. Prices are on each model's page at apimodels.app; failed generations are not charged.
 
 ## Import a template
 
@@ -23,7 +25,7 @@ Timings come from our own test runs on n8n 2.43.8 on 2026-10-19. Prices are on e
 
 Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.
 
-- **Form templates** (image, video, podcast) use a **Bearer Auth** credential: paste the key as the token.
+- **Form templates** (image, video, podcast, video-to-posts, model comparison) use a **Bearer Auth** credential: paste the key as the token.
 - **Chat agent** uses an **OpenAI** credential: paste the key and set **Base URL** to `https://api.apimodels.app/v1`. The same credential works in any OpenAI Chat Model or AI Agent node, so you can run Claude, GPT, Gemini, DeepSeek or Qwen in n8n by changing the model id.
 
 ## Screenshots
@@ -43,6 +45,16 @@ Create an API key in the [apimodels console](https://apimodels.app/console/api-k
 ![Blog post to podcast workflow](images/blog-post-to-podcast-workflow.png)
 
 <img src="images/blog-post-to-podcast-result.png" alt="Result page with the audio player, costs and script" width="420">
+
+**Video to blog post, X thread and LinkedIn post**
+
+![Video to posts workflow](images/video-to-posts-workflow.png)
+
+**Compare chat models side by side**
+
+![Model comparison workflow](images/compare-models-workflow.png)
+
+<img src="images/compare-models-result.png" alt="Comparison page with time, tokens and cost for five models" width="520">
 
 **Chat agent with image tool**
 
