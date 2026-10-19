@@ -1,0 +1,621 @@
+{
+  "name": "Turn product photos into ad images with GPT Image 2 and apimodels.app",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Turn product photos into ad images with GPT Image 2\n\nUpload one product photo in an n8n form, pick a scene, and get back an ad-ready image that keeps the product's shape, colors and logo. Image generation runs on GPT Image 2 through [apimodels.app](https://apimodels.app), an OpenAI-compatible API for image, video, audio and chat models.\n\n### How it works\n1. The form collects the photo, product name, scene, aspect ratio and resolution.\n2. The photo is uploaded to apimodels and gets a public URL.\n3. **Build prompt** turns the scene into a prompt that tells the model to keep the product unchanged.\n4. GPT Image 2 edits the photo as an async task. The workflow checks the task every 15 seconds.\n5. The result page shows the image, a download link and the amount actually charged. Failed tasks are not charged.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.\n2. Create a **Bearer Auth** credential with that key and select it in the three HTTP Request nodes.\n3. Activate the workflow and open the production form URL from the trigger node.\n\n### Customize\n- Add or edit scenes in **Build prompt** (also add them to the form's Scene list).\n- Change the model, polling interval or time limit in **Settings**.\n- If you share the form link, turn on Basic Auth in the trigger so others can't spend your credit.\n\nCurrent prices are on the [GPT Image 2 page](https://apimodels.app/models/gpt-image-2): 1K $0.025, 2K $0.03, 4K $0.05 per image.",
+        "height": 860,
+        "width": 520,
+        "color": 1
+      },
+      "id": "0711eba7-cf26-589e-8022-980e1c5876c9",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -300
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Collect and upload\nThe form takes the photo and options. The photo is uploaded once and reused by URL.",
+        "height": 360,
+        "width": 900,
+        "color": 7
+      },
+      "id": "585fa0b2-7790-5a92-a0ab-8fb2e0b3f00a",
+      "name": "Section: collect",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Generate and wait\nCreates the GPT Image 2 task, then checks it every 15 seconds until it is done, failed or out of time.",
+        "height": 560,
+        "width": 900,
+        "color": 7
+      },
+      "id": "88c9e595-49d3-56ef-b79b-f45935e82e8c",
+      "name": "Section: generate",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        900,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Result pages\nShows the image and the real charge, the model's own error message, or the task id if it ran out of time.",
+        "height": 760,
+        "width": 480,
+        "color": 7
+      },
+      "id": "bd6fe148-c996-5d69-b70f-b1645762fe7a",
+      "name": "Section: result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1840,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Product ad image generator",
+        "formDescription": "Upload a product photo, choose a scene and get an ad-ready image made with GPT Image 2. The product itself stays unchanged.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Product photo",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".jpg, .jpeg, .png, .webp",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Product name",
+              "placeholder": "e.g. sage-green ceramic coffee mug",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Scene",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Clean studio (white background)"
+                  },
+                  {
+                    "option": "Lifestyle at home"
+                  },
+                  {
+                    "option": "Outdoor, natural light"
+                  },
+                  {
+                    "option": "Luxury dark backdrop"
+                  },
+                  {
+                    "option": "Social media flat lay"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Aspect ratio",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Same as photo"
+                  },
+                  {
+                    "option": "1:1"
+                  },
+                  {
+                    "option": "3:4"
+                  },
+                  {
+                    "option": "4:3"
+                  },
+                  {
+                    "option": "2:3"
+                  },
+                  {
+                    "option": "3:2"
+                  },
+                  {
+                    "option": "9:16"
+                  },
+                  {
+                    "option": "16:9"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Resolution",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "1K"
+                  },
+                  {
+                    "option": "2K"
+                  },
+                  {
+                    "option": "4K"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Extra instructions",
+              "fieldType": "textarea",
+              "placeholder": "Optional, e.g. add a few coffee beans around it, morning light"
+            }
+          ]
+        },
+        "options": {
+          "path": "product-ad-images",
+          "buttonLabel": "Generate"
+        }
+      },
+      "id": "c4e07875-e910-512d-a36a-1219100be632",
+      "name": "Product photo form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        200
+      ],
+      "webhookId": "e3643c56-a55e-53fb-ac8c-866d33b5b3e8"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ecde5c93-6498-52bd-9eab-3656b7e00111",
+              "name": "api_base",
+              "value": "https://api.apimodels.app/v1",
+              "type": "string"
+            },
+            {
+              "id": "7a1204e1-7b4e-5815-8b69-75a700441610",
+              "name": "model",
+              "value": "gpt-image-2",
+              "type": "string"
+            },
+            {
+              "id": "ac23b529-0525-5be9-b991-0523929b7ad7",
+              "name": "poll_seconds",
+              "value": 15,
+              "type": "number"
+            },
+            {
+              "id": "558daa87-3ea2-5eea-8a62-5a7ff35648c9",
+              "name": "max_checks",
+              "value": 40,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "stripBinary": false
+        }
+      },
+      "id": "5c0a6e93-83a3-5c6d-b8b1-7d6df9afeed0",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_base }}/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {},
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "Product_photo"
+            }
+          ]
+        }
+      },
+      "id": "b171eaa4-eb33-5f0f-ab4c-81c71d8d2b69",
+      "name": "Upload photo to apimodels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        200
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Scene presets. The keys must match the \"Scene\" options in the form.\nconst SCENES = {\n  'Clean studio (white background)':\n    'on a seamless pure white background, soft diffused studio lighting, a subtle natural contact shadow, crisp e-commerce catalog style',\n  'Lifestyle at home':\n    'placed naturally in a bright, modern home setting that suits the product, soft window light, shallow depth of field, warm and inviting',\n  'Outdoor, natural light':\n    'outdoors in soft natural daylight, in surroundings that suit the product, gently blurred background, fresh and airy mood',\n  'Luxury dark backdrop':\n    'on a dark stone surface against a deep charcoal backdrop, dramatic rim lighting and soft reflections, premium magazine-ad look',\n  'Social media flat lay':\n    'shot top-down as a flat lay on a soft pastel background with a few complementary props, balanced composition with room for text',\n};\n\nconst form = $('Product photo form').first().json;\nconst scene = SCENES[form['Scene']] ?? SCENES['Clean studio (white background)'];\nconst extra = (form['Extra instructions'] || '').trim();\n\nconst prompt = [\n  `Professional advertising photo of the product in the reference image (${form['Product name']}), ${scene}.`,\n  'Keep the product exactly as it is: same shape, proportions, colors, materials, logo and any text printed on it. Do not add new text or logos.',\n  extra ? `Additional direction: ${extra}` : '',\n].filter(Boolean).join(' ');\n\nconst ratio = form['Aspect ratio'] === 'Same as photo' ? 'auto' : form['Aspect ratio'];\n\nreturn [{ json: { prompt, image_url: $input.first().json.data.publicUrl, aspect_ratio: ratio, resolution: form['Resolution'] } }];"
+      },
+      "id": "dbbf3bb7-7c9d-5c21-b01a-1d444898cc57",
+      "name": "Build prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        660,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/images/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $('Settings').first().json.model,\n  prompt: $json.prompt,\n  image_urls: [$json.image_url],\n  aspect_ratio: $json.aspect_ratio,\n  resolution: $json.resolution\n}) }}"
+      },
+      "id": "82e64b9d-5a65-5041-9dd5-8046d405955c",
+      "name": "Create image task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        940,
+        200
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Settings').first().json.poll_seconds }}",
+        "unit": "seconds"
+      },
+      "id": "a5115f14-51dc-5d64-b3d4-c961b684b43f",
+      "name": "Wait before checking",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1160,
+        200
+      ],
+      "webhookId": "c4f48fd8-7b9d-5bcb-b14c-11be5672b98d"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Settings').first().json.api_base }}/images/generations?task_id={{ $('Create image task').first().json.data.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "f5fb8269-ef73-5a83-9980-a5f16a92784f",
+      "name": "Check task status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        200
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9ad984f5-33cb-5c16-85d4-51bb004e48c3",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": "completed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Done"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "89b8d635-6773-56d2-b968-619afa7316f4",
+                    "leftValue": "={{ $json.data.state }}",
+                    "rightValue": "failed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Failed"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Still running"
+        }
+      },
+      "id": "102e2951-9999-5952-b53b-9c19af493cd8",
+      "name": "Route by status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1600,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "3c4e8310-f5cd-527e-8fc0-445abc17dc2b",
+              "leftValue": "={{ $runIndex + 1 }}",
+              "rightValue": "={{ $('Settings').first().json.max_checks }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "77e95a4e-5449-586c-8c07-4d29ea25660a",
+      "name": "Out of time?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1600,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg{max-width:100%;border-radius:12px;border:1px solid #e7e5e4}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}</style></head><body><div class=\"card\">\n<h2>Your ad image is ready</h2>\n<img src=\"{{ $json.data.resultUrls[0] }}\" alt=\"Generated product ad image\">\n<div><a class=\"btn\" href=\"{{ $json.data.resultUrls[0] }}\" target=\"_blank\" rel=\"noopener\">Open full size</a><a class=\"btn ghost\" href=\"/form/product-ad-images\">Make another</a></div>\n<p class=\"meta\">Charged ${{ $json.data.credits }} · {{ ($json.data.costTime / 1000).toFixed(0) }} s · task {{ $json.data.taskId }}</p>\n<p class=\"meta\">Download the image soon; result links are not kept forever.</p>\n</div></body></html>"
+      },
+      "id": "7ff7f664-bd03-5275-b2cd-b5c6637976a4",
+      "name": "Show result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        20
+      ],
+      "webhookId": "4ecfc2bb-722e-5039-95d7-554be3523ee3"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg{max-width:100%;border-radius:12px;border:1px solid #e7e5e4}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}</style></head><body><div class=\"card\">\n<h2>The image could not be made</h2>\n<p>{{ $json.data.failMsg || 'The task failed without a message.' }}</p>\n<p class=\"meta\">Failed tasks are not charged. Task {{ $json.data.taskId }}</p>\n<a class=\"btn\" href=\"/form/product-ad-images\">Try again</a>\n</div></body></html>"
+      },
+      "id": "022d5c70-8552-56fd-ab5f-dc08028e6852",
+      "name": "Show error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        220
+      ],
+      "webhookId": "0ebf47ad-5757-5e2f-81e7-d2848697c648"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg{max-width:100%;border-radius:12px;border:1px solid #e7e5e4}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}</style></head><body><div class=\"card\">\n<h2>Still rendering</h2>\n<p>The image was not ready within the time limit set in Settings. It may still finish.</p>\n<p class=\"meta\">Look it up later with GET /v1/images/generations?task_id={{ $('Create image task').first().json.data.taskId }}</p>\n<a class=\"btn\" href=\"/form/product-ad-images\">Back to the form</a>\n</div></body></html>"
+      },
+      "id": "483b683c-907e-5fc3-819e-d231aac9c6fc",
+      "name": "Show timeout",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1900,
+        420
+      ],
+      "webhookId": "e804778d-8484-516d-8477-7dddbf293794"
+    }
+  ],
+  "connections": {
+    "Product photo form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Upload photo to apimodels",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload photo to apimodels": {
+      "main": [
+        [
+          {
+            "node": "Build prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build prompt": {
+      "main": [
+        [
+          {
+            "node": "Create image task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create image task": {
+      "main": [
+        [
+          {
+            "node": "Wait before checking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait before checking": {
+      "main": [
+        [
+          {
+            "node": "Check task status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check task status": {
+      "main": [
+        [
+          {
+            "node": "Route by status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by status": {
+      "main": [
+        [
+          {
+            "node": "Show result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Out of time?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Out of time?": {
+      "main": [
+        [
+          {
+            "node": "Show timeout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait before checking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

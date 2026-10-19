@@ -1,0 +1,668 @@
+{
+  "name": "Create short videos from a photo and a prompt with Seedance 2.0 and apimodels.app",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Create short videos from a photo with Seedance 2.0\n\nDescribe a shot, optionally upload a photo to use as the first frame, and get back a short video with native sound. Useful for product teasers, social clips and storyboards. Video generation runs on ByteDance Seedance 2.0 through [apimodels.app](https://apimodels.app), an OpenAI-compatible API for image, video, audio and chat models.\n\n### How it works\n1. The form collects the prompt, an optional first-frame photo, the Seedance tier, resolution, length and aspect ratio.\n2. If a photo was uploaded, it goes to apimodels once and is passed on by URL.\n3. **Build request** maps the form to the API fields and keeps 1080p for the tier that supports it.\n4. The video task runs asynchronously. The workflow checks it every 20 seconds, for up to 30 minutes.\n5. The result page plays the video and shows what it actually cost. Failed tasks are not charged.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.\n2. Create a **Bearer Auth** credential with that key and select it in the three HTTP Request nodes.\n3. Activate the workflow and open the production form URL from the trigger node.\n\n### Customize\n- Change tier names or defaults in **Build request**.\n- Change the polling interval or time limit in **Settings**.\n- Turn on Basic Auth in the trigger before sharing the form link.\n\nPrices are per second of video and depend on tier and resolution, from $0.044/s on Seedance 2.0 Mini at 480p. See the [Seedance 2.0 page](https://apimodels.app/models/seedance-2.0).",
+        "height": 940,
+        "width": 540,
+        "color": 1
+      },
+      "id": "02f9b4e8-10ba-5df6-91c8-415af7d35005",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -640,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Collect the request\nThe photo is optional. Without one, the video is made from the prompt alone.",
+        "height": 520,
+        "width": 1120,
+        "color": 7
+      },
+      "id": "7b7ff050-4bad-5e4f-b7b6-754fc9eac257",
+      "name": "Section: collect",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Generate and wait\nCreates the Seedance task, then checks it every 20 seconds until it is done, failed or out of time.",
+        "height": 560,
+        "width": 900,
+        "color": 7
+      },
+      "id": "93788068-ebd9-55dd-8e64-255e25063328",
+      "name": "Section: generate",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Result pages\nPlays the video with its real charge, shows the model's own error message, or gives the task id if it ran out of time.",
+        "height": 780,
+        "width": 480,
+        "color": 7
+      },
+      "id": "2a3fafb4-2522-54f3-9041-956219629f46",
+      "name": "Section: result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Short video generator",
+        "formDescription": "Describe the shot you want. Add a photo to use it as the first frame. Made with Seedance 2.0, with native sound.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "What should happen in the video",
+              "fieldType": "textarea",
+              "requiredField": true,
+              "placeholder": "e.g. The mug slowly turns on the table while steam rises; the camera pushes in gently"
+            },
+            {
+              "fieldLabel": "First frame photo",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".jpg, .jpeg, .png, .webp"
+            },
+            {
+              "fieldLabel": "Model",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Seedance 2.0 Mini (lowest cost)"
+                  },
+                  {
+                    "option": "Seedance 2.0 Fast"
+                  },
+                  {
+                    "option": "Seedance 2.0 (best quality, up to 1080p)"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Resolution",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "480p"
+                  },
+                  {
+                    "option": "720p"
+                  },
+                  {
+                    "option": "1080p"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Length (seconds)",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "5"
+                  },
+                  {
+                    "option": "8"
+                  },
+                  {
+                    "option": "10"
+                  },
+                  {
+                    "option": "15"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Aspect ratio",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "16:9"
+                  },
+                  {
+                    "option": "9:16"
+                  },
+                  {
+                    "option": "1:1"
+                  },
+                  {
+                    "option": "4:3"
+                  },
+                  {
+                    "option": "3:4"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "path": "short-video",
+          "buttonLabel": "Generate video"
+        }
+      },
+      "id": "93c486ca-0534-5f65-a237-1ab050aa3843",
+      "name": "Video request form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "fa799a5e-8cc8-5ac1-b77e-b1876c6bc0f4"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4fb6070c-711b-5815-bf8e-d882c25331d4",
+              "name": "api_base",
+              "value": "https://api.apimodels.app/v1",
+              "type": "string"
+            },
+            {
+              "id": "5efab190-408c-50dc-90a9-0927aef13929",
+              "name": "poll_seconds",
+              "value": 20,
+              "type": "number"
+            },
+            {
+              "id": "f28d251a-66fe-57c5-a418-189ac85c3cda",
+              "name": "max_checks",
+              "value": 90,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "stripBinary": false
+        }
+      },
+      "id": "c682e110-0bb2-5424-a5d3-0a387866a5c2",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b136dee2-0139-59a5-8654-3ef8d85640e7",
+              "leftValue": "={{ $binary.First_frame_photo !== undefined }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "36326c98-47e4-541e-bbea-4048c40d3272",
+      "name": "Photo uploaded?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_base }}/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {},
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "First_frame_photo"
+            }
+          ]
+        }
+      },
+      "id": "154a3ffb-e665-5079-8f11-7236069f4573",
+      "name": "Upload photo to apimodels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        120
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Form label -> API model name. 1080p is only offered on the standard tier.\nconst MODELS = {\n  'Seedance 2.0 Mini (lowest cost)': 'seedance-2.0-mini',\n  'Seedance 2.0 Fast': 'seedance-2.0-fast',\n  'Seedance 2.0 (best quality, up to 1080p)': 'seedance-2.0',\n};\n\nconst form = $('Video request form').first().json;\nconst model = MODELS[form['Model']] ?? 'seedance-2.0-mini';\nlet resolution = form['Resolution'];\nif (resolution === '1080p' && model !== 'seedance-2.0') resolution = '720p';\n\nconst body = {\n  model,\n  prompt: form['What should happen in the video'],\n  resolution,\n  duration: Number(form['Length (seconds)']),\n  aspect_ratio: form['Aspect ratio'],\n};\n\nif ($('Upload photo to apimodels').isExecuted) {\n  body.first_frame_url = $('Upload photo to apimodels').first().json.data.publicUrl;\n}\n\nreturn [{ json: { body } }];"
+      },
+      "id": "7051c8ea-b67b-5aac-80b5-1da403d1bd36",
+      "name": "Build request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/video/generations",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {},
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.body) }}"
+      },
+      "id": "018c524e-a2d6-58e3-bbbf-500d83ede871",
+      "name": "Create video task",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1160,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "amount": "={{ $('Settings').first().json.poll_seconds }}",
+        "unit": "seconds"
+      },
+      "id": "e3d2b20b-5e2b-536f-b525-45626ceac4b2",
+      "name": "Wait before checking",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1380,
+        240
+      ],
+      "webhookId": "d74f2911-dfd9-583d-be29-b0c2cd6392ed"
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Settings').first().json.api_base }}/video/generations?task_id={{ $('Create video task').first().json.data.taskId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {}
+      },
+      "id": "6853590e-d25d-5fa3-ab80-d7268b2b66d7",
+      "name": "Check task status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 3000
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "9cba9583-b0ea-5ec4-ac1d-d68ec828fccd",
+                    "leftValue": "={{ $json.data.state }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "completed"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Done"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "3be69165-966b-5f74-b936-220b7bf99f23",
+                    "leftValue": "={{ $json.data.state }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "failed"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Failed"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "Still running"
+        }
+      },
+      "id": "ba2c2bc1-6111-549f-a0e7-3f4babea9bf8",
+      "name": "Route by status",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1820,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e2c1d452-5699-5bca-b3d1-3b81aca12a73",
+              "leftValue": "={{ $runIndex + 1 }}",
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              },
+              "rightValue": "={{ $('Settings').first().json.max_checks }}"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "f74d510f-a698-59f9-bb9c-dbd961c83e47",
+      "name": "Out of time?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1820,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>Your video is ready</h2>\n<video src=\"{{ $json.data.resultUrls[0] }}\" controls playsinline></video>\n<div><a class=\"btn\" href=\"{{ $json.data.resultUrls[0] }}\" target=\"_blank\" rel=\"noopener\">Download video</a><a class=\"btn ghost\" href=\"/form/short-video\">Make another</a></div>\n<p class=\"meta\">{{ $('Build request').first().json.body.model }} · {{ $('Build request').first().json.body.resolution }} · {{ $('Build request').first().json.body.duration }} s · charged ${{ $json.data.credits }} · task {{ $json.data.taskId }}</p>\n<p class=\"meta\">Download the video soon; result links are not kept forever.</p>\n</div></body></html>"
+      },
+      "id": "61843aa7-3fce-5eb7-ac27-e04f2c8cba00",
+      "name": "Show result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        40
+      ],
+      "webhookId": "61843aa7-3fce-5eb7-ac27-e04f2c8cba00"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>The video could not be made</h2>\n<p>{{ $json.data.failMsg || 'The task failed without a message.' }}</p>\n<p class=\"meta\">Failed tasks are not charged. Photos of real people can be refused by the model's safety checks. Task {{ $json.data.taskId }}</p>\n<a class=\"btn\" href=\"/form/short-video\">Try again</a>\n</div></body></html>"
+      },
+      "id": "93a36b72-cd05-5cb4-b42b-5a861d324a6f",
+      "name": "Show error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        240
+      ],
+      "webhookId": "93a36b72-cd05-5cb4-b42b-5a861d324a6f"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>Still rendering</h2>\n<p>The video was not ready within the time limit set in Settings. It may still finish.</p>\n<p class=\"meta\">Look it up later with GET /v1/video/generations?task_id={{ $('Create video task').first().json.data.taskId }}</p>\n<a class=\"btn\" href=\"/form/short-video\">Back to the form</a>\n</div></body></html>"
+      },
+      "id": "f0028854-0db7-521e-8cbf-7389f222766d",
+      "name": "Show timeout",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        440
+      ],
+      "webhookId": "f0028854-0db7-521e-8cbf-7389f222766d"
+    }
+  ],
+  "connections": {
+    "Wait before checking": {
+      "main": [
+        [
+          {
+            "node": "Check task status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check task status": {
+      "main": [
+        [
+          {
+            "node": "Route by status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by status": {
+      "main": [
+        [
+          {
+            "node": "Show result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Out of time?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Out of time?": {
+      "main": [
+        [
+          {
+            "node": "Show timeout",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait before checking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Video request form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Photo uploaded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Photo uploaded?": {
+      "main": [
+        [
+          {
+            "node": "Upload photo to apimodels",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload photo to apimodels": {
+      "main": [
+        [
+          {
+            "node": "Build request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build request": {
+      "main": [
+        [
+          {
+            "node": "Create video task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create video task": {
+      "main": [
+        [
+          {
+            "node": "Wait before checking",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

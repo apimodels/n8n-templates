@@ -1,0 +1,541 @@
+{
+  "name": "Convert blog posts into podcast audio with Claude and ElevenLabs via apimodels.app",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Convert blog posts into podcast audio with Claude and ElevenLabs\n\nPaste an article link or its text, pick a voice and a length, and get back a narrated podcast episode as an MP3. Claude writes a spoken script from the article, and ElevenLabs v4 reads it. Both run through one API key on [apimodels.app](https://apimodels.app), an OpenAI-compatible API for chat, image, video and audio models.\n\n### How it works\n1. The form takes an article URL or pasted text, a voice, a style and a target length.\n2. If only a URL is given, the page is fetched and the main text is extracted.\n3. Claude Sonnet 5.5 rewrites the article as a script for one host, without inventing facts.\n4. ElevenLabs v4 turns the script into speech. The MP3 is uploaded to get a shareable link.\n5. The result page plays the episode, shows the script, the real cost of the script and an estimate for the voice.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.\n2. Create a **Bearer Auth** credential with that key and select it in the three apimodels HTTP Request nodes.\n3. Activate the workflow and open the production form URL from the trigger node.\n\n### Customize\n- Change the script model, voice model or price used for the estimate in **Settings**.\n- Edit voices, styles and lengths in **Prepare input**.\n- Turn on Basic Auth in the trigger before sharing the form link.",
+        "height": 800,
+        "width": 540,
+        "color": 1
+      },
+      "id": "9273b123-a980-5c9e-b52b-57ec1f323b44",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -660,
+        -320
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Get the article text\nUses the pasted text, or fetches the URL and keeps the main article body.",
+        "height": 520,
+        "width": 1120,
+        "color": 7
+      },
+      "id": "5fecc24a-de78-58a1-a0b6-8c5dc6e79af8",
+      "name": "Section: input",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Write and voice the script\nClaude writes the script; ElevenLabs v4 reads it; the MP3 is uploaded for a link.",
+        "height": 400,
+        "width": 900,
+        "color": 7
+      },
+      "id": "a0eb847f-d3c6-52a3-ba01-81d4eac7ab94",
+      "name": "Section: script",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Result pages\nPlays the episode with its costs, or shows the provider's own error message.",
+        "height": 760,
+        "width": 480,
+        "color": 7
+      },
+      "id": "0e2637ce-f828-5aa5-b5b5-7845eafb2212",
+      "name": "Section: result",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2060,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Blog post to podcast",
+        "formDescription": "Turn an article into a narrated podcast episode. Paste a link or the text itself.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Article URL",
+              "placeholder": "https://example.com/blog/my-post"
+            },
+            {
+              "fieldLabel": "Or paste the text",
+              "fieldType": "textarea",
+              "placeholder": "Used instead of the URL when filled in"
+            },
+            {
+              "fieldLabel": "Voice",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "George (British, warm storyteller)"
+                  },
+                  {
+                    "option": "Sarah (American, confident)"
+                  },
+                  {
+                    "option": "Alice (British, clear educator)"
+                  },
+                  {
+                    "option": "Brian (American, deep and calm)"
+                  },
+                  {
+                    "option": "Daniel (British, broadcaster)"
+                  },
+                  {
+                    "option": "Jessica (American, bright and conversational)"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Style",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Friendly explainer"
+                  },
+                  {
+                    "option": "News briefing"
+                  },
+                  {
+                    "option": "Storytelling"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Length",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Short (about 1 minute)"
+                  },
+                  {
+                    "option": "Medium (about 3 minutes)"
+                  },
+                  {
+                    "option": "Long (about 5 minutes)"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "path": "blog-to-podcast",
+          "buttonLabel": "Make the episode"
+        }
+      },
+      "id": "87032ca9-4d48-50e7-b5ed-192b1b45315d",
+      "name": "Article form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        240
+      ],
+      "webhookId": "aa17d8fd-4274-5967-8550-65780710a633"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b1bf6e7d-945b-596e-af0d-f5987d3349d0",
+              "name": "api_base",
+              "value": "https://api.apimodels.app/v1",
+              "type": "string"
+            },
+            {
+              "id": "01bc5760-5341-506d-83c6-01d0fc00c751",
+              "name": "script_model",
+              "value": "claude-sonnet-5-5",
+              "type": "string"
+            },
+            {
+              "id": "c8fe7432-5b63-51cc-8f63-b9168bc008aa",
+              "name": "voice_model",
+              "value": "eleven-tts-v4",
+              "type": "string"
+            },
+            {
+              "id": "88c9f643-5091-5537-914d-0821fb9967cc",
+              "name": "voice_price_per_1k_chars",
+              "value": 0.08,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "e5dccc9a-0b7b-54c1-9dec-83958e034489",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "69358563-5645-51f6-b4ef-b50914407b24",
+              "leftValue": "={{ ($json['Article URL'] || '').trim() !== '' && ($json['Or paste the text'] || '').trim() === '' }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "0f876294-d08c-59e4-a69a-320d43d9d36c",
+      "name": "Fetch the URL?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json['Article URL'].trim() }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "maxRedirects": 5
+            }
+          }
+        }
+      },
+      "id": "c2c9e3ad-0149-5cae-a439-8138d7f357e9",
+      "name": "Fetch article page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        120
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Voices are ElevenLabs library voices; any voice id from GET /v1/voices works.\nconst VOICES = {\n  'George (British, warm storyteller)': 'JBFqnCBsd6RMkjVDRZzb',\n  'Sarah (American, confident)': 'EXAVITQu4vr4xnSDxMaL',\n  'Alice (British, clear educator)': 'Xb7hH8MSUJpSbSDYk0k2',\n  'Brian (American, deep and calm)': 'nPczCjzI2devNBz1zQrb',\n  'Daniel (British, broadcaster)': 'onwK4e9ZLuTAKqWW03F9',\n  'Jessica (American, bright and conversational)': 'cgSgspJ2msm6clMCkdW9',\n};\nconst WORDS = { 'Short (about 1 minute)': 150, 'Medium (about 3 minutes)': 420, 'Long (about 5 minutes)': 700 };\n\nconst form = $('Article form').first().json;\nlet text = (form['Or paste the text'] || '').trim();\n\nif (!text && $('Fetch article page').isExecuted) {\n  let html = String($('Fetch article page').first().json.data || '');\n  const article = html.match(/<article[\\s\\S]*?<\\/article>/i);\n  if (article) html = article[0];\n  text = html\n    .replace(/<(script|style|noscript|svg|nav|header|footer|aside|form)[\\s\\S]*?<\\/\\1>/gi, ' ')\n    .replace(/<\\/(p|h[1-6]|li|div|br)>/gi, '\\n')\n    .replace(/<[^>]+>/g, ' ')\n    .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '\"').replace(/&#39;|&apos;/g, \"'\")\n    .replace(/&lt;/g, '<').replace(/&gt;/g, '>')\n    .replace(/[ \\t]+/g, ' ').replace(/\\n\\s*\\n+/g, '\\n\\n').trim();\n}\n\nif (text.length < 200) {\n  throw new Error('Not enough article text. Paste the text into the form instead of the URL.');\n}\n\nreturn [{ json: {\n  article: text.slice(0, 40000),\n  voice_id: VOICES[form['Voice']] ?? VOICES['George (British, warm storyteller)'],\n  style: form['Style'],\n  words: WORDS[form['Length']] ?? 420,\n} }];"
+      },
+      "id": "19e0de19-ee64-5a60-be7e-ff5dc06f1a8a",
+      "name": "Prepare input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        900,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $('Settings').first().json.script_model,\n  max_tokens: 2000,\n  messages: [\n    { role: 'system', content: 'You write scripts for a single-host audio podcast. Output only the words the host will say: no title, no stage directions, no markdown, no emojis, no URLs. Spell out numbers, units and abbreviations the way they should be spoken. Open with a one-sentence hook, explain the key points in plain language, and close with a short takeaway. Stay faithful to the source and do not invent facts, names or numbers.' },\n    { role: 'user', content: `Style: ${$json.style}. Length: about ${$json.words} words.\\n\\nSource article:\\n${$json.article}` }\n  ]\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "edadf193-1242-5b78-816c-99c0629e0459",
+      "name": "Write podcast script",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1160,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/tts/stream",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $('Settings').first().json.voice_model,\n  voice_id: $('Prepare input').first().json.voice_id,\n  text: $json.body.choices[0].message.content.trim()\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "audio"
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "7d524368-e63f-575f-81aa-643a3545715b",
+      "name": "Generate speech",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1380,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/files",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {},
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "audio"
+            }
+          ]
+        }
+      },
+      "id": "5772170c-43b3-53b3-b676-1104685aa03a",
+      "name": "Upload audio to apimodels",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1600,
+        240
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>Your episode is ready</h2>\n<audio src=\"{{ $json.data.publicUrl }}\" controls></audio>\n<div><a class=\"btn\" href=\"{{ $json.data.publicUrl }}\" target=\"_blank\" rel=\"noopener\">Download MP3</a><a class=\"btn ghost\" href=\"/form/blog-to-podcast\">Make another</a></div>\n<p class=\"meta\">Script by {{ $('Settings').first().json.script_model }}: ${{ $('Write podcast script').first().json.headers['x-apimodels-cost'] || 'see console' }} charged · Voice by {{ $('Settings').first().json.voice_model }}: about ${{ ($('Write podcast script').first().json.body.choices[0].message.content.length / 1000 * $('Settings').first().json.voice_price_per_1k_chars).toFixed(3) }} for {{ $('Write podcast script').first().json.body.choices[0].message.content.length }} characters</p>\n<pre>{{ $('Write podcast script').first().json.body.choices[0].message.content }}</pre>\n</div></body></html>"
+      },
+      "id": "f234905a-8578-5c93-a103-d89faa3c102e",
+      "name": "Show result",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        40
+      ],
+      "webhookId": "f234905a-8578-5c93-a103-d89faa3c102e"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>The episode could not be made</h2>\n<p>{{ $json.error?.message || $json.error || 'Something went wrong.' }}</p>\n<p class=\"meta\">If the article page could not be read, paste the text into the form instead. Failed requests are not charged.</p>\n<a class=\"btn\" href=\"/form/blog-to-podcast\">Try again</a>\n</div></body></html>"
+      },
+      "id": "328027c9-f158-559e-8646-3d44b2098d79",
+      "name": "Show error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        2120,
+        280
+      ],
+      "webhookId": "328027c9-f158-559e-8646-3d44b2098d79"
+    }
+  ],
+  "connections": {
+    "Article form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Fetch the URL?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch the URL?": {
+      "main": [
+        [
+          {
+            "node": "Fetch article page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch article page": {
+      "main": [
+        [
+          {
+            "node": "Prepare input",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare input": {
+      "main": [
+        [
+          {
+            "node": "Write podcast script",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write podcast script": {
+      "main": [
+        [
+          {
+            "node": "Generate speech",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate speech": {
+      "main": [
+        [
+          {
+            "node": "Upload audio to apimodels",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload audio to apimodels": {
+      "main": [
+        [
+          {
+            "node": "Show result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

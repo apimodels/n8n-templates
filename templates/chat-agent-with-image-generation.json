@@ -1,0 +1,212 @@
+{
+  "name": "Build an AI chat agent that generates images with Claude, GPT Image 2 and apimodels.app",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## AI chat agent that talks and draws with one API key\n\nA chat assistant that answers questions and generates images on request, inside n8n's hosted chat. The conversation runs on Claude Haiku 5.5 and the drawing tool calls GPT Image 2, both through one OpenAI-compatible key from [apimodels.app](https://apimodels.app). Swap either model by changing one model id.\n\n### How it works\n1. **Chat** receives a message and keeps the last 10 turns in memory.\n2. **AI Agent** decides whether to answer in text or call the **generate_image** tool.\n3. The tool sends one request to the image endpoint and gets the image URL back in the same response, with no polling.\n4. The agent replies with the image inline plus a short caption.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys). New accounts get $0.1 of free credit.\n2. Create an **OpenAI** credential: paste the key and set **Base URL** to `https://api.apimodels.app/v1`.\n3. Select that credential in **Chat model** and **generate_image**.\n4. Activate the workflow and open the chat URL from the Chat node.\n\n### Customize\n- Use any chat model id from `GET /v1/models` (Claude, GPT, Gemini, DeepSeek, Qwen) in **Chat model**.\n- Change the image model or default size in **generate_image**, e.g. `nano-banana-2-1`.\n- Edit the assistant's behaviour in the agent's system message.",
+        "height": 700,
+        "width": 520,
+        "color": 1
+      },
+      "id": "9a9c2507-7000-5450-b304-67674e94f807",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -620,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Chat and agent\nThe agent answers in text or calls the image tool when asked to draw.",
+        "height": 300,
+        "width": 760,
+        "color": 7
+      },
+      "id": "5d48ba07-1dff-5e0b-872c-a76d3fc7ba9e",
+      "name": "Section: chat",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Model, memory and image tool\nAll three use the same apimodels key; only the model ids differ.",
+        "height": 340,
+        "width": 760,
+        "color": 7
+      },
+      "id": "265ff6cf-5896-5110-8040-0f8fbc9c88c4",
+      "name": "Section: tools",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "public": true,
+        "mode": "hostedChat",
+        "initialMessages": "Hi! I can answer questions and draw pictures.\nTry: \"Draw a cozy reading nook in watercolor, wide format.\"",
+        "options": {
+          "title": "Chat and draw",
+          "subtitle": "Claude for text, GPT Image 2 for images"
+        }
+      },
+      "id": "c8712a8f-1e5e-52ca-ae4b-0b83b4d06655",
+      "name": "Chat",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        80
+      ],
+      "webhookId": "65970c54-6edb-5302-967c-a3c966f7ec7f"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You are a friendly creative assistant. Answer questions concisely. When the user asks for a picture, illustration, logo, mockup or any other image, call the generate_image tool. Write the tool prompt in English with subject, style, composition, lighting and colors, and pick size: 1024x1024 for square, 1536x1024 for wide, 1024x1536 for tall. After the tool returns, reply with the image as Markdown, ![short description](URL), followed by one short sentence. Never invent an image URL. If the tool returns an error, explain it in plain words.",
+          "maxIterations": 6
+        }
+      },
+      "id": "9b674fc4-6561-5f47-bbc7-015feedac435",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        300,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-haiku-5-5",
+          "mode": "id"
+        },
+        "options": {
+          "temperature": 0.7,
+          "timeout": 120000
+        }
+      },
+      "id": "e924e060-93e7-5205-9ae5-71c4e5233cc5",
+      "name": "Chat model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        80,
+        470
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels (OpenAI-compatible)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "cd99d537-2f80-5e17-919d-51e25750014c",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        300,
+        470
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "Generate one image from a text prompt. Returns JSON whose data[0].url is the image URL.",
+        "method": "POST",
+        "url": "https://api.apimodels.app/v1/images/generations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-image-2\",\n  \"prompt\": {{ JSON.stringify($fromAI('prompt', 'Detailed English description of the image: subject, style, composition, lighting, colors', 'string')) }},\n  \"size\": \"{{ $fromAI('size', 'One of 1024x1024, 1536x1024 or 1024x1536', 'string') }}\",\n  \"response_format\": \"url\"\n}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "3879dc26-f307-587e-a721-56b0a162e5ab",
+      "name": "generate_image",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        520,
+        470
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels (OpenAI-compatible)"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Chat": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "generate_image": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
