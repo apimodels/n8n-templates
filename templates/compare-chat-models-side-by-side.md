@@ -12,9 +12,11 @@ Developers and product managers choosing a model for a feature, prompt engineers
 - The result page shows a comparison table, marks the fastest and lowest-cost models, flags answers cut off by the output limit, and shows each full answer. Failed calls appear as failed and are not charged.
 
 ## How to set up
-1. Create an API key at apimodels.app (new accounts get $0.1 of free credit).
+1. Create an API key at [apimodels.app](https://apimodels.app) (new accounts get $0.1 of free credit).
 2. Add a Bearer Auth credential with the key and select it in the two HTTP Request nodes.
 3. Activate the workflow and open the form URL. Setup takes about 3 minutes.
+
+Step-by-step setup guide with screenshots: [Use apimodels in n8n](https://apimodels.app/docs/n8n).
 
 ## Requirements
 - An apimodels.app account. A five-model comparison on a short prompt usually costs well under $0.01.

@@ -8,14 +8,16 @@ Creators, marketers and founders who publish videos and want written versions fo
 ## How it works
 - An n8n form takes the video link, output language, tone and whether to make a cover.
 - The workflow lists the video's caption tracks, prefers human captions in the spoken language, then downloads and cleans them into plain text.
-- Claude Sonnet 5.5 writes every format in one call and returns JSON; it is told to stay faithful to the transcript.
-- If requested, GPT Image 2 draws a 16:9 cover with a short headline.
+- [Claude Sonnet 5.5](https://apimodels.app/models/claude-sonnet-5-5) writes every format in one call and returns JSON; it is told to stay faithful to the transcript.
+- If requested, [GPT Image 2](https://apimodels.app/models/gpt-image-2) draws a 16:9 cover with a short headline.
 - The result page shows copy-ready boxes, character counts for each post in the thread, and the exact cost of the run. Errors show the provider's own message.
 
 ## How to set up
-1. Create an API key at apimodels.app (new accounts get $0.1 of free credit).
+1. Create an API key at [apimodels.app](https://apimodels.app) (new accounts get $0.1 of free credit).
 2. Add a Bearer Auth credential with the key and select it in the three apimodels HTTP Request nodes.
 3. Activate the workflow and open the form URL. Setup takes about 5 minutes.
+
+Step-by-step setup guide with screenshots: [Use apimodels in n8n](https://apimodels.app/docs/n8n).
 
 ## Requirements
 - An apimodels.app account. In our test, a 19-minute video cost $0.063 with a cover (subtitles $0.004, writing $0.031, cover $0.029).
