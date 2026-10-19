@@ -1,0 +1,736 @@
+{
+  "name": "Chat with your CSV and Excel data using Claude and a free Cradler database",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Chat with your CSV and Excel data, no database to set up\n\nUpload a CSV or Excel file and ask questions about it in plain words: \"How many orders are unpaid?\", \"Which category had the most refunds?\", \"Revenue from paid orders in September?\". The file goes into a free [Cradler](https://cradler.ai) database, which creates the table and columns on the first write, and an AI agent running Claude through [apimodels.app](https://apimodels.app) looks up the table, queries it and does the math.\n\n### How it works\n1. **Upload form** takes the file and a table name. Headers become snake_case columns and each column gets one type (number, true/false or text).\n2. Rows are inserted in batches of 500, and the table is recorded in a `data_tables` list.\n3. In the **Chat**, the agent lists tables, reads a table's columns, then runs read-only queries with filters, sorting and exact counts, and uses the calculator for sums and averages.\n\n### Setup\n1. Create a free project at [cradler.ai](https://cradler.ai) and add its **service** key as a **Bearer Auth** credential named \"Cradler service key\".\n2. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys) and add an **OpenAI** credential with Base URL `https://api.apimodels.app/v1`.\n3. In **Settings**, replace `YOUR_PROJECT_ID` with your Cradler project id.\n4. Activate, upload a file through the form, then open the chat from the **Chat** node.\n\n### Good to know\n- One query returns at most 1,000 rows, so sums and averages are exact up to that many matching rows; counts are always exact. Best for files up to a few thousand rows.\n- The chat tools can only read data. Keep both forms private or behind Basic Auth.",
+        "height": 980,
+        "width": 560,
+        "color": 1
+      },
+      "id": "1b9c9764-1cb0-5414-b9f5-992a672dc1f2",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Import a file\nReads CSV or Excel, cleans headers and types, inserts in batches and records the table.",
+        "height": 380,
+        "width": 1580,
+        "color": 7
+      },
+      "id": "8ffb7b39-4e32-5469-903c-73f0ad256f29",
+      "name": "Section: import",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        -200
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Chat with the data\nThe agent lists tables, reads columns, runs read-only queries and calculates.",
+        "height": 560,
+        "width": 1000,
+        "color": 7
+      },
+      "id": "8d4fd513-fc58-58dd-90c9-281927bb41f7",
+      "name": "Section: chat",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Upload data to chat with",
+        "formDescription": "Upload a CSV or Excel file. The first row must contain the column names.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Data file",
+              "fieldType": "file",
+              "multipleFiles": false,
+              "acceptFileTypes": ".csv, .xlsx, .xls",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Table name",
+              "requiredField": true,
+              "placeholder": "e.g. orders"
+            }
+          ]
+        },
+        "options": {
+          "path": "upload-data",
+          "buttonLabel": "Import"
+        }
+      },
+      "id": "6104a26b-48aa-5263-b681-a02e1eabc3d1",
+      "name": "Upload form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "b8807542-3cf1-596f-a230-50f9fbb4692e"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "mode": "hostedChat",
+        "initialMessages": "Hi! Ask me anything about the data you uploaded.\nFor example: \"How many orders are unpaid?\"",
+        "options": {
+          "title": "Chat with your data",
+          "subtitle": "Read-only answers from your Cradler tables"
+        }
+      },
+      "id": "ec763d6d-9d5e-529c-8623-b93ff747665b",
+      "name": "Chat",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        420
+      ],
+      "webhookId": "3ae67ead-1c72-5688-a063-7ccf9f61a155"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "45258ddf-6cae-5bca-b42f-ec49c908e9b5",
+              "name": "cradler_api",
+              "value": "https://gateway.cradler.ai/v1/YOUR_PROJECT_ID",
+              "type": "string"
+            },
+            {
+              "id": "20280696-5b9a-5313-8831-61141d1611d8",
+              "name": "batch_size",
+              "value": 500,
+              "type": "number"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {
+          "stripBinary": false
+        }
+      },
+      "id": "f8b6b32f-f117-5b95-bbaa-0b46214efa61",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "7cddae55-5b86-5876-aa7f-65611b3c5561",
+              "leftValue": "={{ $json.chatInput !== undefined }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "e5bc89ba-626d-5dce-abbf-00160751f7d8",
+      "name": "Chat message?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "dcc9a2c5-5412-596e-afdb-cb3d55d38837",
+              "leftValue": "={{ /\\.xlsx?$/i.test($binary.Data_file?.fileName || '') }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7a3610ab-c823-57d0-9028-2c0f3d9aec7d",
+      "name": "Excel file?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "xlsx",
+        "binaryPropertyName": "Data_file",
+        "options": {}
+      },
+      "id": "7f45e16f-1db4-52f9-bd10-5668b085c36f",
+      "name": "Read Excel",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        880,
+        -100
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "csv",
+        "binaryPropertyName": "Data_file",
+        "options": {}
+      },
+      "id": "f4eb1b61-4096-59fa-8bbe-2fc80d4dec42",
+      "name": "Read CSV",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        880,
+        100
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cradler needs lowercase snake_case names, and each column should keep one type.\nconst settings = $('Settings').first().json;\nconst toSnake = (s) => String(s).replace(/([a-z0-9])([A-Z])/g, '$1_$2').toLowerCase()\n  .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '').replace(/^([0-9])/, '_$1');\nconst RESERVED = ['id', 'created_at', 'updated_at'];\n\nlet table = toSnake(settings['Table name']) || 'my_data';\nif (table === 'data_tables') table = 'my_data_tables';\n\nconst raw = $input.all().map((i) => i.json);\nif (!raw.length) throw new Error('The file has no rows.');\n\n// Map original headers to unique snake_case column names.\nconst headers = Object.keys(raw[0]);\nconst used = new Set();\nconst colOf = {};\nheaders.forEach((h, i) => {\n  let c = toSnake(h) || `col_${i + 1}`;\n  if (RESERVED.includes(c)) c = `src_${c}`;\n  while (used.has(c)) c = `${c}_${i + 1}`;\n  used.add(c); colOf[h] = c;\n});\n\nconst isNum = (v) => /^-?\\d+(\\.\\d+)?$/.test(v) && !/^0\\d/.test(v);\nconst isBool = (v) => /^(true|false)$/i.test(v);\nconst type = {};\nfor (const h of headers) {\n  const vals = raw.map((r) => String(r[h] ?? '').trim()).filter((v) => v !== '');\n  type[h] = vals.length && vals.every(isNum) ? 'number' : vals.length && vals.every(isBool) ? 'boolean' : 'text';\n}\n\nconst rows = raw.map((r) => {\n  const out = {};\n  for (const h of headers) {\n    const v = String(r[h] ?? '').trim();\n    if (v === '') continue;\n    out[colOf[h]] = type[h] === 'number' ? Number(v) : type[h] === 'boolean' ? /^true$/i.test(v) : v;\n  }\n  return out;\n});\n\nconst size = settings.batch_size || 500;\nconst columns = headers.map((h) => `${colOf[h]}:${type[h]}`).join(', ');\nconst batches = [];\nfor (let i = 0; i < rows.length; i += size) {\n  batches.push({ json: { table, columns, total_rows: rows.length, file: settings['Data file']?.filename || '', rows: rows.slice(i, i + size) } });\n}\nreturn batches;"
+      },
+      "id": "77978ff7-2b30-5569-a365-d383e23b0215",
+      "name": "Prepare rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        0
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.cradler_api }}/{{ $json.table }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.rows) }}",
+        "options": {
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 300
+            }
+          },
+          "timeout": 120000
+        }
+      },
+      "id": "7ad056bc-6368-5eee-a1c9-058f7f001db6",
+      "name": "Insert rows",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1320,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.cradler_api }}/data_tables",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify([{\n  table_name: $('Prepare rows').first().json.table,\n  columns: $('Prepare rows').first().json.columns,\n  row_count: $('Prepare rows').first().json.total_rows,\n  source_file: $('Prepare rows').first().json.file\n}]) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a72100cb-b7b4-5408-91e3-b5ba7da4d6f1",
+      "name": "Record the table",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1540,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      },
+      "executeOnce": true,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>Imported {{ $('Prepare rows').first().json.total_rows }} rows into \"{{ $('Prepare rows').first().json.table }}\"</h2>\n<p class=\"meta\">Columns: {{ $('Prepare rows').first().json.columns }}</p>\n<p>Now open the chat from the Chat node in n8n and ask a question about this table.</p>\n<a class=\"btn ghost\" href=\"/form/upload-data\">Import another file</a>\n</div></body></html>"
+      },
+      "id": "967987de-dece-5cf8-9d6c-d847ce810323",
+      "name": "Import done",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        -100
+      ],
+      "webhookId": "967987de-dece-5cf8-9d6c-d847ce810323"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>The file could not be imported</h2>\n<p>{{ $json.error?.message || $json.error || 'Please check the file and try again.' }}</p>\n<p class=\"meta\">The first row must hold column names. Save Excel sheets as .xlsx or CSV.</p>\n<a class=\"btn\" href=\"/form/upload-data\">Back</a>\n</div></body></html>"
+      },
+      "id": "73a15b19-2299-5377-9b7a-e14c885da421",
+      "name": "Import error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1760,
+        120
+      ],
+      "webhookId": "73a15b19-2299-5377-9b7a-e14c885da421"
+    },
+    {
+      "parameters": {
+        "options": {
+          "systemMessage": "You answer questions about tabular data stored in a Cradler database. Your tools are read-only.\n1. Call list_tables to see which tables exist, their columns and row counts.\n2. Call get_table_schema for the table you need.\n3. Call query_table with a request object: select (column list), filters (field, op, value; ops: eq, neq, gt, gte, lt, lte, like, ilike, in, is_null), order (field, desc), limit (1 to 1000) and count \"exact\".\nFor \"how many\" questions use count \"exact\" with limit 1 and read total. For sums, averages, minimums or maximums, select only the needed column with limit 1000, then use the calculator on the returned values. If total is larger than the rows returned, say the answer covers only the first 1000 matching rows. Dates are stored as text such as 2026-09-14, so filter a month with gte \"2026-09-01\" and lt \"2026-10-01\". Use ilike for case-insensitive text matches. Answer briefly with the number first, then one line on how you got it. Never invent numbers; if the data cannot answer the question, say so.",
+          "maxIterations": 12
+        }
+      },
+      "id": "ddee042c-f290-54dd-af66-cf433d6af841",
+      "name": "Data analyst",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        700,
+        440
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "claude-sonnet-5-5",
+          "mode": "id"
+        },
+        "options": {
+          "temperature": 0.2,
+          "timeout": 120000
+        }
+      },
+      "id": "bfa09ddf-819a-5855-a54f-2862e358d74f",
+      "name": "Chat model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        760
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels (OpenAI-compatible)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 10
+      },
+      "id": "9c338b91-c36c-532d-95ac-4cdcec01b56b",
+      "name": "Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        640,
+        760
+      ]
+    },
+    {
+      "parameters": {
+        "toolDescription": "List the imported data tables with their columns (name:type) and row counts. Call this first.",
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.cradler_api }}/data_tables/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"select\": [\"table_name\", \"columns\", \"row_count\", \"created_at\"], \"order\": [{\"field\": \"created_at\", \"desc\": true}], \"limit\": 50}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "2043f1c6-d561-5995-98d5-bbb654c866dd",
+      "name": "list_tables",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        820,
+        760
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Get the column names and database types of one table.",
+        "url": "={{ $('Settings').first().json.cradler_api }}/{{ $fromAI('table', 'Table name exactly as listed by list_tables', 'string').replace(/[^a-z0-9_]/g, '') }}/schema",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "a39b914e-4e26-5358-802d-b45a4ab4f71f",
+      "name": "get_table_schema",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        760
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Read rows from one table. Returns rows, count (rows returned) and total (all matching rows when count is \"exact\").",
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.cradler_api }}/{{ $fromAI('table', 'Table name exactly as listed by list_tables', 'string').replace(/[^a-z0-9_]/g, '') }}/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($fromAI('request', 'Query object, for example {\"select\":[\"total\"],\"filters\":[{\"field\":\"status\",\"op\":\"eq\",\"value\":\"Paid\"}],\"order\":[{\"field\":\"order_date\",\"desc\":true}],\"limit\":1000,\"count\":\"exact\"}', 'json')) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "8e2b3a03-cc43-5f92-9483-029248d03f61",
+      "name": "query_table",
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.2,
+      "position": [
+        1180,
+        760
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "a03a5ad3-22c4-54c5-b229-482461253a71",
+      "name": "Calculator",
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        1360,
+        760
+      ]
+    }
+  ],
+  "connections": {
+    "Upload form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Chat message?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat message?": {
+      "main": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Excel file?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Excel file?": {
+      "main": [
+        [
+          {
+            "node": "Read Excel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Read CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Excel": {
+      "main": [
+        [
+          {
+            "node": "Prepare rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Import error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read CSV": {
+      "main": [
+        [
+          {
+            "node": "Prepare rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Import error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare rows": {
+      "main": [
+        [
+          {
+            "node": "Insert rows",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Import error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows": {
+      "main": [
+        [
+          {
+            "node": "Record the table",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Import error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record the table": {
+      "main": [
+        [
+          {
+            "node": "Import done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Import error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "list_tables": {
+      "ai_tool": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_table_schema": {
+      "ai_tool": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "query_table": {
+      "ai_tool": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "Data analyst",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

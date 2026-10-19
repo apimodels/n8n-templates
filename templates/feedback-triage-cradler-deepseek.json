@@ -1,0 +1,625 @@
+{
+  "name": "Classify customer feedback with DeepSeek, store it in a free Cradler database and get AI reports",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Classify customer feedback and get AI reports, stored in a free database\n\nA feedback form for your users plus a report page for your team. Every message is classified by an LLM (category, sentiment, urgency, one-line summary, tags) and saved to a free [Cradler](https://cradler.ai) database, which creates the table and columns on the first write. The report page reads the last 7 or 30 days and has Claude write the themes, top issues and suggested actions. The models run through one key on [apimodels.app](https://apimodels.app).\n\n### How it works\n1. **Feedback form** collects the message, product area and an optional email.\n2. DeepSeek V4.1 Flash classifies it and returns JSON; the row is saved to the `feedback` table.\n3. **Report form** picks a period; the workflow loads that period's rows, counts them by category, sentiment, urgency and area, and Claude Sonnet 5.5 writes the report.\n\n### Setup\n1. Create an API key in the [apimodels console](https://apimodels.app/console/api-keys) and add it as a **Bearer Auth** credential named \"apimodels API key\".\n2. Create a free project at [cradler.ai](https://cradler.ai) and add its **service** key as a second Bearer Auth credential named \"Cradler service key\".\n3. In **Settings**, replace `YOUR_PROJECT_ID` in `cradler_api` with your Cradler project id.\n4. Activate the workflow. Share the feedback form; keep the report form for your team (turn on Basic Auth there).\n\n### Customize\n- Edit categories in **Classify feedback** and the report sections in **Write report**.\n- Add a Slack or email node after **Save to Cradler** to alert on high urgency.",
+        "height": 940,
+        "width": 560,
+        "color": 1
+      },
+      "id": "9dbf5a29-e4f5-5981-8ae8-0579288d99d9",
+      "name": "Overview",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        -380
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Classify and store\nEach message is classified as JSON and saved as one row in Cradler.",
+        "height": 340,
+        "width": 1120,
+        "color": 7
+      },
+      "id": "b946e899-f717-56b7-aac2-43fac675044f",
+      "name": "Section: intake",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        -160
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Report on demand\nLoads the period from Cradler, counts it, and Claude writes the report.",
+        "height": 340,
+        "width": 1340,
+        "color": 7
+      },
+      "id": "d0f13ed1-0bef-5bfd-a986-c04319c3018d",
+      "name": "Section: report",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        380,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "formTitle": "Send us feedback",
+        "formDescription": "Tell us what works, what is broken or what you wish we had. We read every message.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Your feedback",
+              "fieldType": "textarea",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Area",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "General"
+                  },
+                  {
+                    "option": "Onboarding"
+                  },
+                  {
+                    "option": "Billing"
+                  },
+                  {
+                    "option": "Performance"
+                  },
+                  {
+                    "option": "Integrations"
+                  }
+                ]
+              }
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "Optional, if you want a reply"
+            }
+          ]
+        },
+        "options": {
+          "path": "feedback",
+          "buttonLabel": "Send"
+        }
+      },
+      "id": "13341c77-ae64-58af-a401-306a02c006a3",
+      "name": "Feedback form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "aacc4470-920c-55cd-a0f8-5eac01935c61"
+    },
+    {
+      "parameters": {
+        "formTitle": "Feedback report",
+        "formDescription": "Summarise recent feedback with AI.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Period",
+              "fieldType": "dropdown",
+              "requiredField": true,
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Last 7 days"
+                  },
+                  {
+                    "option": "Last 30 days"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "options": {
+          "path": "feedback-report",
+          "buttonLabel": "Build report"
+        }
+      },
+      "id": "97afb435-99dd-5da2-929d-ba157fad3ff1",
+      "name": "Report form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        420
+      ],
+      "webhookId": "b840fb1f-be87-5a1e-9b69-4d4a32f8b6e3"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "50f332ac-afb5-593d-9b75-90ef3bfdc2b0",
+              "name": "api_base",
+              "value": "https://api.apimodels.app/v1",
+              "type": "string"
+            },
+            {
+              "id": "618dff81-f3f9-5461-91d7-a01b1615c8c2",
+              "name": "cradler_api",
+              "value": "https://gateway.cradler.ai/v1/YOUR_PROJECT_ID",
+              "type": "string"
+            },
+            {
+              "id": "acc6b53d-0289-5653-b7c0-6bd2d0e96426",
+              "name": "table",
+              "value": "feedback",
+              "type": "string"
+            },
+            {
+              "id": "59a5630e-f880-5960-b473-9b24e59541be",
+              "name": "classify_model",
+              "value": "deepseek-v4.1-flash",
+              "type": "string"
+            },
+            {
+              "id": "2a459666-0b02-54f6-829e-e4394f9f5783",
+              "name": "report_model",
+              "value": "claude-sonnet-5-5",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "f4e45856-98d3-5aab-b4f8-abf261d8bdda",
+      "name": "Settings",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "754357df-e8c0-5e0d-a27c-4cfdc9e95b39",
+              "leftValue": "={{ $json['Period'] !== undefined }}",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              },
+              "rightValue": ""
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "188e5b90-4559-539a-b415-7eaaead65f35",
+      "name": "Report request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        440,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.api_base }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $json.classify_model,\n  max_tokens: 600,\n  messages: [\n    { role: 'system', content: 'You triage customer feedback for a software product. Reply with one JSON object only, keys: category (one of bug, feature_request, complaint, question, praise, other), sentiment (positive, neutral or negative), urgency (low, medium or high; high means data loss, payment problems, security or the product unusable), summary (one English sentence under 20 words), tags (array of 1 to 4 short lowercase English tags), language (ISO 639-1 code of the message).' },\n    { role: 'user', content: `Area: ${$json['Area']}\\n\\nFeedback:\\n${$json['Your feedback']}` }\n  ]\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 60000
+        }
+      },
+      "id": "7918a7c7-0087-5ee9-ae48-5e887958bcaf",
+      "name": "Classify feedback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst form = $('Settings').first().json;\nconst text = (res.body && res.body.choices && res.body.choices[0].message.content) || '';\nconst m = text.match(/\\{[\\s\\S]*\\}/);\nlet c = {};\ntry { c = JSON.parse(m ? m[0] : text); } catch (e) { c = { category: 'other', sentiment: 'neutral', urgency: 'medium', summary: '', tags: [] }; }\nconst pick = (v, allowed, dflt) => (allowed.includes(v) ? v : dflt);\n\n// Cradler column names must be lowercase snake_case.\nreturn [{ json: { row: {\n  message: form['Your feedback'],\n  area: form['Area'],\n  email: form['Email'] || null,\n  category: pick(c.category, ['bug', 'feature_request', 'complaint', 'question', 'praise', 'other'], 'other'),\n  sentiment: pick(c.sentiment, ['positive', 'neutral', 'negative'], 'neutral'),\n  urgency: pick(c.urgency, ['low', 'medium', 'high'], 'medium'),\n  summary: String(c.summary || '').slice(0, 300),\n  tags: Array.isArray(c.tags) ? c.tags.slice(0, 4).join(', ') : '',\n  language: String(c.language || '').slice(0, 8),\n  source: 'n8n form',\n  classify_cost: Number(res.headers['x-apimodels-cost'] || 0),\n} } }];"
+      },
+      "id": "c5e5a19b-cfa5-5344-8ee6-1e32d7800f9f",
+      "name": "Build row",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.cradler_api }}/{{ $('Settings').first().json.table }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify([$json.row]) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "8fac41c5-6579-53c4-83ed-dc34cbcdda93",
+      "name": "Save to Cradler",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        0
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>Thanks for your feedback</h2>\n<p>We read every message{{ $('Settings').first().json['Email'] ? ' and will reply to ' + $('Settings').first().json['Email'] + ' if needed' : '' }}.</p>\n<a class=\"btn ghost\" href=\"/form/feedback\">Send more</a>\n</div></body></html>"
+      },
+      "id": "5afd552f-c548-57d3-80ac-49593e24b113",
+      "name": "Thank you page",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        -80
+      ],
+      "webhookId": "5afd552f-c548-57d3-80ac-49593e24b113"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>Something went wrong</h2>\n<p>{{ $json.error?.message || $json.error || 'Please try again.' }}</p>\n<a class=\"btn\" href=\"/form/feedback\">Back</a>\n</div></body></html>"
+      },
+      "id": "0c18e7c0-a4b9-5c61-b0b9-53cffb5d6bfa",
+      "name": "Show error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1340,
+        120
+      ],
+      "webhookId": "0c18e7c0-a4b9-5c61-b0b9-53cffb5d6bfa"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.cradler_api }}/{{ $json.table }}/query",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  select: ['created_at', 'area', 'category', 'sentiment', 'urgency', 'summary', 'tags', 'message'],\n  filters: [{ field: 'created_at', op: 'gte', value: new Date(Date.now() - ($json['Period'] === 'Last 30 days' ? 30 : 7) * 86400000).toISOString() }],\n  order: [{ field: 'created_at', desc: true }],\n  limit: 1000,\n  count: 'exact'\n}) }}",
+        "options": {
+          "timeout": 30000
+        }
+      },
+      "id": "b88d7e99-dd3b-5267-b285-e20f0fc9da6f",
+      "name": "Load feedback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        660,
+        420
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "Cradler service key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const res = $input.first().json;\nconst rows = res.rows || [];\nconst count = (key) => rows.reduce((m, r) => { const k = r[key] || 'unknown'; m[k] = (m[k] || 0) + 1; return m; }, {});\nconst tags = {};\nfor (const r of rows) for (const t of String(r.tags || '').split(',').map((s) => s.trim()).filter(Boolean)) tags[t] = (tags[t] || 0) + 1;\nconst topTags = Object.entries(tags).sort((a, b) => b[1] - a[1]).slice(0, 10);\n// The model gets one compact line per message, newest first, at most 300.\nconst lines = rows.slice(0, 300).map((r) => `[${r.urgency}|${r.category}|${r.sentiment}|${r.area}] ${r.summary || String(r.message).slice(0, 160)}`);\nreturn [{ json: {\n  period: $('Settings').first().json['Period'],\n  total: res.total ?? rows.length,\n  by_category: count('category'), by_sentiment: count('sentiment'), by_urgency: count('urgency'), by_area: count('area'),\n  top_tags: topTags,\n  high: rows.filter((r) => r.urgency === 'high').slice(0, 10).map((r) => ({ when: r.created_at, area: r.area, message: r.message })),\n  lines,\n} }];"
+      },
+      "id": "4403a7b4-c5c9-5d08-93d8-e27f3e41983d",
+      "name": "Count and sample",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        880,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Settings').first().json.api_base }}/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  model: $('Settings').first().json.report_model,\n  max_tokens: 2500,\n  messages: [\n    { role: 'system', content: 'You write short feedback reports for a product team. Use plain text with these sections, each starting with a line like \"## Title\": Overview (2 sentences with the numbers), Top themes (up to 5 bullets with counts), Urgent issues (bullets, or \"None\"), What users like (up to 3 bullets), Suggested actions (3 to 5 bullets). Base every claim on the data; do not invent numbers.' },\n    { role: 'user', content: JSON.stringify({ period: $json.period, total: $json.total, by_category: $json.by_category, by_sentiment: $json.by_sentiment, by_urgency: $json.by_urgency, by_area: $json.by_area, top_tags: $json.top_tags, messages: $json.lines }) }\n  ]\n}) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          },
+          "timeout": 180000
+        }
+      },
+      "id": "ffe247e0-531f-591f-b625-f3a023e72d4c",
+      "name": "Write report",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1100,
+        420
+      ],
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL",
+          "name": "apimodels API key"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const esc = (s) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst d = $('Count and sample').first().json;\nconst res = $input.first().json;\nconst report = (res.body && res.body.choices && res.body.choices[0].message.content) || '';\n// Minimal rendering: \"## \" lines become headings, \"- \" lines become list items.\nconst body = esc(report).split('\\n').map((l) => {\n  if (/^#{1,3}\\s/.test(l)) return `<h3>${l.replace(/^#{1,3}\\s/, '')}</h3>`;\n  if (/^\\s*[-*•]\\s/.test(l)) return `<li>${l.replace(/^\\s*[-*•]\\s/, '')}</li>`;\n  return l.trim() ? `<p>${l}</p>` : '';\n}).join('\\n');\nconst chips = (obj) => Object.entries(obj).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<span class=\"chip\">${esc(k)} ${v}</span>`).join(' ');\n\nconst html = `<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:820px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px}\n.chip{display:inline-block;margin:3px 2px;padding:3px 10px;border-radius:999px;background:#f5f5f4;border:1px solid #e7e5e4;font-size:13px}\n.row{margin:6px 0}.meta{color:#78716c;font-size:13px}li{margin:4px 0 4px 18px}h3{margin:22px 0 6px}\n.btn{display:inline-block;margin-top:16px;padding:9px 16px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}</style></head>\n<body><div class=\"card\"><h2>Feedback report · ${esc(d.period)}</h2>\n<p class=\"meta\">${d.total} messages · report written by ${esc($('Settings').first().json.report_model)} for $${Number(res.headers['x-apimodels-cost'] || 0).toFixed(4)}</p>\n<div class=\"row\"><b>Category</b> ${chips(d.by_category)}</div>\n<div class=\"row\"><b>Sentiment</b> ${chips(d.by_sentiment)}</div>\n<div class=\"row\"><b>Urgency</b> ${chips(d.by_urgency)}</div>\n<div class=\"row\"><b>Area</b> ${chips(d.by_area)}</div>\n${body}\n<a class=\"btn\" href=\"/form/feedback-report\">New report</a></div></body></html>`;\nreturn [{ json: { html } }];"
+      },
+      "id": "0218320d-3af1-5218-b57c-593d285b7e99",
+      "name": "Build report page",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1320,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "={{ $json.html }}"
+      },
+      "id": "e1cbb57b-323c-58ee-a58c-2738491742f8",
+      "name": "Show report",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        420
+      ],
+      "webhookId": "e9879f55-e3eb-5e5d-b17f-6eb1752484ec"
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<style>body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#f5f5f4;color:#1c1917;margin:0;padding:32px 16px}\n.card{max-width:760px;margin:0 auto;background:#fff;border:1px solid #e7e5e4;border-radius:16px;padding:24px;text-align:center}\nimg,video,audio{max-width:100%;border-radius:12px}img,video{border:1px solid #e7e5e4}audio{width:100%}a{color:#1d4ed8}.meta{color:#78716c;font-size:14px}\n.btn{display:inline-block;margin:12px 6px 0;padding:10px 18px;border-radius:10px;background:#1c1917;color:#fff;text-decoration:none}\n.ghost{background:#fff;color:#1c1917;border:1px solid #d6d3d1}pre{text-align:left;white-space:pre-wrap;background:#fafaf9;border:1px solid #e7e5e4;border-radius:10px;padding:12px}</style></head><body><div class=\"card\">\n<h2>The report could not be built</h2>\n<p>{{ $json.error?.message || $json.error || 'Please try again.' }}</p>\n<p class=\"meta\">If this is a new project, send one feedback message first so the table exists.</p>\n<a class=\"btn\" href=\"/form/feedback-report\">Back</a>\n</div></body></html>"
+      },
+      "id": "a1249fc9-8fc5-5b40-956d-84c1e67ebe50",
+      "name": "Show report error",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 1,
+      "position": [
+        1540,
+        620
+      ],
+      "webhookId": "a1249fc9-8fc5-5b40-956d-84c1e67ebe50"
+    }
+  ],
+  "connections": {
+    "Feedback form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report form": {
+      "main": [
+        [
+          {
+            "node": "Settings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Settings": {
+      "main": [
+        [
+          {
+            "node": "Report request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Report request?": {
+      "main": [
+        [
+          {
+            "node": "Load feedback",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Classify feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify feedback": {
+      "main": [
+        [
+          {
+            "node": "Build row",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build row": {
+      "main": [
+        [
+          {
+            "node": "Save to Cradler",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Cradler": {
+      "main": [
+        [
+          {
+            "node": "Thank you page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Load feedback": {
+      "main": [
+        [
+          {
+            "node": "Count and sample",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Count and sample": {
+      "main": [
+        [
+          {
+            "node": "Write report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write report": {
+      "main": [
+        [
+          {
+            "node": "Build report page",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Show report error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build report page": {
+      "main": [
+        [
+          {
+            "node": "Show report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
